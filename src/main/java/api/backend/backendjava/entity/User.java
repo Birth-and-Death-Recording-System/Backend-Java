@@ -37,6 +37,9 @@ public class User implements UserDetails{
     private boolean enabled;
     private boolean locked;
 
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "user")
+    private transient Profile profile;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name()));

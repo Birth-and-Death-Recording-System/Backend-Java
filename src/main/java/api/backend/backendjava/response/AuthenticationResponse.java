@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AuthenticationResponse {
-    String token;
+
     String jwtToken;
     String message;
 

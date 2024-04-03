@@ -1,8 +1,10 @@
 package api.backend.backendjava.service.implementations;
 
+import api.backend.backendjava.entity.Profile;
 import api.backend.backendjava.entity.User;
 import api.backend.backendjava.entity.enums.Gender;
 import api.backend.backendjava.entity.enums.Role;
+import api.backend.backendjava.repository.ProfileRepository;
 import api.backend.backendjava.request.LoginRequest;
 import api.backend.backendjava.request.RegisterRequest;
 import api.backend.backendjava.response.AuthenticationResponse;
@@ -18,12 +20,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthInterface {
     private final UserRepository repository;
+    private final ProfileRepository profileRepository;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final JwtServiceImpl jwtService;
@@ -50,11 +52,18 @@ public class AuthServiceImpl implements AuthInterface {
         UserResponse user = getUser(newUser);
         String jwtToken = jwtService.generateToken(String.valueOf(user));
 
-        // Generate a token
-        String token = UUID.randomUUID().toString();
+        Profile profile = Profile.builder()
+                .user(newUser)
+                .username(newUser.getUsername())
+                .email(newUser.getEmail())
+                .gender(newUser.getGender())
+                .build();
+        newUser.setProfile(profile);
+        profileRepository.save(profile);
+
 
         // Build the authentication response
-        return getAuthenticationResponse(token,  user, "Registration successful", jwtToken);
+        return getAuthenticationResponse(user, "Registration successful", jwtToken);
 
     }
 
@@ -72,10 +81,9 @@ public class AuthServiceImpl implements AuthInterface {
                 UserResponse user = getUser(newUser);
 
                 // Generate a token
-                String token = UUID.randomUUID().toString();
                 String jwtToken = jwtService.generateToken(String.valueOf(user));
 
-                return getAuthenticationResponse(token, user, "Login successful", jwtToken);
+                return getAuthenticationResponse(user, "Login successful", jwtToken);
             }
         } catch (Exception e) {
             throw new IllegalStateException("Invalid username or password");
@@ -96,9 +104,8 @@ public class AuthServiceImpl implements AuthInterface {
     }
 
 
-    private static AuthenticationResponse getAuthenticationResponse(String token, UserResponse user, String message, String jwtToken) {
+    private static AuthenticationResponse getAuthenticationResponse(UserResponse user, String message, String jwtToken) {
         return AuthenticationResponse.builder()
-                .token(token)
                 .jwtToken(jwtToken)
                 .userResponse(user)
                 .message(message)
